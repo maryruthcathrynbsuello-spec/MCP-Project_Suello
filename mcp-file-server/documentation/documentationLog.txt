@@ -1,0 +1,8 @@
+# Documentation Log
+
+## M1: Skeleton
+- Installed Node.js LTS (runtime that executes the server)
+- Created repo, installed SDK, zod, express, TypeScript
+- Built list_files tool and Streamable HTTP endpoint at /mcp
+- Verified in MCP Inspector (see docs/m1-inspector.png)
+
