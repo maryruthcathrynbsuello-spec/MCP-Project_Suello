@@ -3,10 +3,24 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { PORT, WORKSPACE_ROOT } from "../config/config.js";
 import { registerListFiles } from "../tools/listFiles.js";
+import { registerReadFile } from "../tools/readFile.js";
+import { registerWriteFile } from "../tools/writeFile.js";
+import { registerStrReplace } from "../tools/strReplace.js";
+import { registerDeleteFile } from "../tools/deleteFiles.js";
+import { registerCreateFolder } from "../tools/createFolder.js";
+import { registerSearchFiles } from "../tools/searchFiles.js";
+import { registerWriteDocx } from "../tools/writeDocx.js";
 
 function buildServer() {
-  const server = new McpServer({ name: "my-file-server", version: "0.1.0" });
+  const server = new McpServer({ name: "my-file-server", version: "0.2.0" });
   registerListFiles(server);
+  registerReadFile(server);
+  registerWriteFile(server);
+  registerStrReplace(server);
+  registerDeleteFile(server);
+  registerCreateFolder(server);
+  registerSearchFiles(server);
+  registerWriteDocx(server);
   return server;
 }
 

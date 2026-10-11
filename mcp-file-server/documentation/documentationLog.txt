@@ -6,3 +6,9 @@
 - Built list_files tool and Streamable HTTP endpoint at /mcp
 - Verified in MCP Inspector (see docs/m1-inspector.png)
 
+## M2: Sandbox
+- Built resolveSafe(): resolves every path against workspace/, rejects ../ and absolute paths, and checks symlinks with realpath
+- Added tools: read_file (chunked), write_file, str_replace, delete_file (needs confirm, moves to .trash), create_folder, search_files, write_docx (8 tools total)
+- Added audit log (logs/audit.log) and helpful isError messages
+- Wrote 11 path-escape tests (npm test), all passing (docs/m2-tests.png)
+- Verified in Inspector, including a blocked escape (docs/m2-denied.png)
