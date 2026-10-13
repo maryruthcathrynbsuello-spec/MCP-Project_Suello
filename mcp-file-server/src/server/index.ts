@@ -1,7 +1,8 @@
 import express from "express";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { PORT, WORKSPACE_ROOT } from "../config/config.js";
+import { PORT, HOST, MCP_TOKEN, WORKSPACE_ROOT } from "../config/config.js";
+import { requireToken } from "../security/auth.js";
 import { registerListFiles } from "../tools/listFiles.js";
 import { registerReadFile } from "../tools/readFile.js";
 import { registerWriteFile } from "../tools/writeFile.js";
@@ -11,8 +12,14 @@ import { registerCreateFolder } from "../tools/createFolder.js";
 import { registerSearchFiles } from "../tools/searchFiles.js";
 import { registerWriteDocx } from "../tools/writeDocx.js";
 
+// Fail closed: never start an open server by accident.
+if (MCP_TOKEN.length < 32) {
+  console.error("MCP_TOKEN is missing or shorter than 32 characters. Set it in .env. Not starting.");
+  process.exit(1);
+}
+
 function buildServer() {
-  const server = new McpServer({ name: "my-file-server", version: "0.2.0" });
+  const server = new McpServer({ name: "my-file-server", version: "0.3.0" });
   registerListFiles(server);
   registerReadFile(server);
   registerWriteFile(server);
@@ -25,10 +32,11 @@ function buildServer() {
 }
 
 const app = express();
-app.use(express.json());
+app.use(express.json({ limit: "2mb" }));
 
-// Each request gets a fresh server + transport (stateless mode: simple and robust).
-app.post("/mcp", async (req, res) => {
+const MCP_PATHS = ["/mcp", "/mcp/:token"];
+
+app.post(MCP_PATHS, requireToken, async (req, res) => {
   try {
     const server = buildServer();
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
@@ -57,10 +65,11 @@ const notAllowed = (_req: express.Request, res: express.Response) => {
     id: null,
   });
 };
-app.get("/mcp", notAllowed);
-app.delete("/mcp", notAllowed);
+app.get(MCP_PATHS, requireToken, notAllowed);
+app.delete(MCP_PATHS, requireToken, notAllowed);
 
-app.listen(PORT, () => {
-  console.log(`MCP server running at http://localhost:${PORT}/mcp`);
+// HOST=127.0.0.1 means only this computer (and the tunnel) can reach the server, not your Wi-Fi network.
+app.listen(PORT, HOST, () => {
+  console.log(`MCP server running at http://${HOST}:${PORT}/mcp`);
   console.log(`Workspace root: ${WORKSPACE_ROOT}`);
 });
