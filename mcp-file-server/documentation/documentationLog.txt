@@ -12,3 +12,25 @@
 - Added audit log (logs/audit.log) and helpful isError messages
 - Wrote 11 path-escape tests (npm test), all passing (docs/m2-tests.png)
 - Verified in Inspector, including a blocked escape (docs/m2-denied.png)
+
+## M3: Deploy
+- Added MCP_TOKEN auth (secret in URL path or Bearer header, timing-safe compare); server refuses to start without it
+- Server binds to 127.0.0.1 only; public access is only through the tunnel
+- Secrets in .env (git-ignored), .env.example committed
+- ngrok free static domain gives an HTTPS tunnel; pm2 runs the server and tunnel from compiled dist/
+- Problem solved: pm2 can't launch the Microsoft Store ngrok shortcut, so I used the standalone C:\ngrok\ngrok.exe
+- Crash test: killed the server process and pm2 restarted it (docs/m3-restart.png)
+- Auth checks: 401 without secret, local and public (docs/m3-auth-public.png)
+- Real client: Claude custom connector created a file on my PC (docs/m3-client.png)
+- Tradeoff: secret in URL is needed because the connector form has no header field. URLs can appear in logs, so rotate the token by editing .env and running pm2 restart all.
+
+
+## M4: Protocol
+- Handoff protocol: init_handoff and append_handoff manage handoff/PROJECT_STATE.md, PLAN_LOG.md, CHECKPOINTS.md, DECISIONS.md (docs/m4-handoff.png)
+- PLAN_LOG, CHECKPOINTS, DECISIONS are append-only: write_file, str_replace and delete_file are blocked on them; PROJECT_STATE.md is edited with str_replace
+- Git-lite: git_status, git_commit, git_log run git via execFile (no shell) inside workspace/.git; commits are authored "MCP Agent", with hooks skipped (docs/m4-git.png)
+- Sandbox hardening: .git folders are off limits to file tools (git hooks could run code); blocked Windows aliases (GIT~1, trailing dot, ":" streams)
+- Guards: 1,000,000-character write limit, docx limits, 2,000-character handoff entries, 200 KB log cap, handoff folder and .trash cannot be deleted (docs/m4-guards.png)
+- Server instructions give every new session the protocol (read state, plan first, search before reading, checkpoint and commit at the end)
+- 13 tools in total. Tests: sandbox + guards, all passing (docs/m4-tests.png)
+- Deployment note: pm2 runs dist/, so changes need npm run build and pm2 restart

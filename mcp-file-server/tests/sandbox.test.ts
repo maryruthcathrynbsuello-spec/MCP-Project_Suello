@@ -25,6 +25,11 @@ const attacks = [
   "C:\\Windows\\win.ini",
   "/etc/passwd",
   "bad\0name.txt",
+  ".git/config",
+  ".GIT/hooks/pre-commit",
+  "notes/.git/config",
+  "GIT~1/config",
+  "notes.txt:hidden",
 ];
 
 for (const attack of attacks) {

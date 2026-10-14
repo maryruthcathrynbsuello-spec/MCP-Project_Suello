@@ -1,7 +1,9 @@
 import fs from "node:fs/promises";
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { MAX_WRITE_CHARS } from "../config/config.js";
 import { resolveSafe } from "../security/sandbox.js";
+import { guardAppendOnly } from "../security/guards.js";
 import { audit } from "../security/audit.js";
 import { ok, fail, toError } from "./helpers.js";
 
@@ -11,17 +13,18 @@ export function registerStrReplace(server: McpServer) {
     {
       title: "Replace text in file",
       description:
-        "Replace one exact piece of text in a file with new text. old_str must appear exactly once.",
+        "Replace one exact piece of text in a file with new text. old_str must appear exactly once. Not allowed on the append-only handoff logs.",
       inputSchema: {
         path: z.string().describe("File path relative to the workspace root"),
-        old_str: z.string().min(1).describe("Exact text to find (must be unique in the file)"),
-        new_str: z.string().describe("Replacement text (can be empty to delete)"),
+        old_str: z.string().min(1).max(MAX_WRITE_CHARS).describe("Exact text to find (must be unique in the file)"),
+        new_str: z.string().max(MAX_WRITE_CHARS).describe("Replacement text (can be empty to delete)"),
       },
     },
     async ({ path: relPath, old_str, new_str }) => {
       audit("str_replace", { path: relPath });
       try {
         const full = await resolveSafe(relPath);
+        guardAppendOnly(full, "str_replace");
         const text = await fs.readFile(full, "utf8");
         const count = text.split(old_str).length - 1;
         if (count === 0) return fail("old_str was not found. Use read_file to check the exact text.");

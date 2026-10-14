@@ -11,6 +11,11 @@ import { registerDeleteFile } from "../tools/deleteFiles.js";
 import { registerCreateFolder } from "../tools/createFolder.js";
 import { registerSearchFiles } from "../tools/searchFiles.js";
 import { registerWriteDocx } from "../tools/writeDocx.js";
+import { registerInitHandoff } from "../tools/initHandoff.js";
+import { registerAppendHandoff } from "../tools/appendHandoff.js";
+import { registerGitStatus } from "../tools/gitStatus.js";
+import { registerGitCommit } from "../tools/gitCommit.js";
+import { registerGitLog } from "../tools/gitLog.js";
 
 // Fail closed: never start an open server by accident.
 if (MCP_TOKEN.length < 32) {
@@ -18,8 +23,15 @@ if (MCP_TOKEN.length < 32) {
   process.exit(1);
 }
 
+const INSTRUCTIONS = `Sandboxed workspace file server. Session protocol:
+1. At the start call init_handoff (safe, never overwrites), then read handoff/PROJECT_STATE.md and the latest entries of PLAN_LOG.md and CHECKPOINTS.md.
+2. Before acting, append a short plan to PLAN_LOG with append_handoff. Record decisions in DECISIONS.
+3. Prefer search_files and chunked read_file over reading whole files. Batch independent calls. Do not retry a failed call with the same input.
+4. At the end: update PROJECT_STATE.md with str_replace, append a CHECKPOINT, then git_commit.
+The logs are append-only; never try to overwrite them.`;
+
 function buildServer() {
-  const server = new McpServer({ name: "my-file-server", version: "0.3.0" });
+  const server = new McpServer({ name: "my-file-server", version: "0.4.0" }, { instructions: INSTRUCTIONS });
   registerListFiles(server);
   registerReadFile(server);
   registerWriteFile(server);
@@ -28,6 +40,11 @@ function buildServer() {
   registerCreateFolder(server);
   registerSearchFiles(server);
   registerWriteDocx(server);
+  registerInitHandoff(server);
+  registerAppendHandoff(server);
+  registerGitStatus(server);
+  registerGitCommit(server);
+  registerGitLog(server);
   return server;
 }
 
@@ -68,7 +85,6 @@ const notAllowed = (_req: express.Request, res: express.Response) => {
 app.get(MCP_PATHS, requireToken, notAllowed);
 app.delete(MCP_PATHS, requireToken, notAllowed);
 
-// HOST=127.0.0.1 means only this computer (and the tunnel) can reach the server, not your Wi-Fi network.
 app.listen(PORT, HOST, () => {
   console.log(`MCP server running at http://${HOST}:${PORT}/mcp`);
   console.log(`Workspace root: ${WORKSPACE_ROOT}`);

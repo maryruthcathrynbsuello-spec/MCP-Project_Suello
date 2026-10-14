@@ -7,3 +7,5 @@ export const MCP_TOKEN = process.env.MCP_TOKEN ?? "";
 
 // The ONLY folder the AI will be allowed to touch.
 export const WORKSPACE_ROOT = path.resolve(process.env.WORKSPACE_ROOT ?? "./workspace");
+
+export const MAX_WRITE_CHARS = 1_000_000;

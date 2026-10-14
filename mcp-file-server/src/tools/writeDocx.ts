@@ -17,7 +17,7 @@ export function registerWriteDocx(server: McpServer) {
       inputSchema: {
         path: z.string().describe("Path ending in .docx, e.g. 'report.docx'"),
         title: z.string().optional().describe("Optional title shown at the top"),
-        paragraphs: z.array(z.string()).min(1).describe("Paragraph texts, in order"),
+        paragraphs: z.array(z.string().max(20000)).min(1).max(500).describe("Paragraph texts, in order (max 500)"),
         overwrite: z.boolean().default(false).describe("Set true to replace an existing file"),
       },
     },

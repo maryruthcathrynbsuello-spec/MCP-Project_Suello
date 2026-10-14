@@ -30,8 +30,19 @@ export async function resolveSafe(userPath: string): Promise<string> {
     );
   }
 
-  // Check 2: shortcuts (symlinks) must not point outside either.
-  // Find the nearest part of the path that exists and resolve its real location.
+  // Check 2: names that are never allowed
+  for (const part of path.relative(WORKSPACE_ROOT, full).split(path.sep)) {
+    if (part.toLowerCase() === ".git") {
+      throw new SandboxError('Access denied: ".git" folders are off limits. Use the git_* tools instead.');
+    }
+    if (/~\d/.test(part) || part.includes(":") || /[. ]$/.test(part)) {
+      throw new SandboxError(
+        `Access denied: "${userPath}" has a name that is not allowed (short-name alias, ":" or trailing dot/space).`
+      );
+    }
+  }
+
+  // Check 3: shortcuts (symlinks) must not point outside either.
   const realRoot = await fs.realpath(WORKSPACE_ROOT);
   let probe = full;
   for (;;) {
